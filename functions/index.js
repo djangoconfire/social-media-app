@@ -3,7 +3,12 @@ const admin = require('firebase-admin');
 const app = require('express')();
 const firebase = require('firebase');
 
-admin.initializeApp();
+var serviceAccount = require('../credentials/serviceAccountKey.json');
+
+admin.initializeApp({
+	credential: admin.credential.cert(serviceAccount),
+	databaseURL: 'https://social-media-app-c1a2c.firebaseio.com'
+});
 
 const firebaseConfig = {
 	apiKey: 'AIzaSyDA8bvsAEmlcvs9WmIo0NWbR7MZA7EhEXs',
@@ -17,10 +22,14 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
+const db = admin.firestore();
+
+let token, userId;
+
 app.get('/screams', (req, res) => {
-	admin
-		.firestore()
+	db
 		.collection('screams')
+		.orderBy('createdAt', 'desc')
 		.get()
 		.then((data) => {
 			let screams = [];
@@ -67,15 +76,40 @@ app.post('/signup', (req, res) => {
 	};
 
 	// TODO: validate
-	firebase
-		.auth()
-		.createUserWithEmailAndPassword(newUser.email, newUser.password)
+	db
+		.doc(`/users/${newUser.handle}`)
+		.get()
+		.then((doc) => {
+			if (doc.exists) {
+				return res.status(400).json({ handle: 'This handle is already taken' });
+			} else {
+				return firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password);
+			}
+		})
 		.then((data) => {
-			return res.status(201).json({ message: `user ${data.user.uid} signed up successfully` });
+			userId = data.user.uid;
+			return data.user.getIdToken();
+		})
+		.then((idToken) => {
+			token = idToken;
+			const userCredentials = {
+				email: newUser.email,
+				handle: newUser.handle,
+				createAt: new Date().toISOString(),
+				userId
+			};
+			return db.doc(`/users/${newUser.handle}`).set(userCredentials);
+		})
+		.then((data) => {
+			return res.status(201).json({ token });
 		})
 		.catch((err) => {
-			console.error(err);
-			return res.status(500).json({ error: err.code });
+			if (err.code === 'auth/email-already-in-use') {
+				return res.status(400).json({ email: 'Email is already in use' });
+			} else {
+				console.error(err);
+				return res.status(500).json({ error: err.code });
+			}
 		});
 });
 
