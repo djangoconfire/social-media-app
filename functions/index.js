@@ -57,8 +57,7 @@ app.post('/createScream', (req, res) => {
 		});
 });
 
-// signuop routes
-
+// signup routes
 app.post('/signup', (req, res) => {
 	const newUser = {
 		email: req.body.email,
@@ -68,12 +67,11 @@ app.post('/signup', (req, res) => {
 	};
 
 	// TODO: validate
-
 	firebase
 		.auth()
 		.createUserWithEmailAndPassword(newUser.email, newUser.password)
 		.then((data) => {
-			return res.status(201).json({ message: `user ${data.user.uid} signed successfully` });
+			return res.status(201).json({ message: `user ${data.user.uid} signed up successfully` });
 		})
 		.catch((err) => {
 			console.error(err);
