@@ -66,6 +66,19 @@ app.post('/createScream', (req, res) => {
 		});
 });
 
+// Helper FUnctions
+
+const isEmpty = (string) => {
+	if (string.trim() === '') return true;
+	else return false;
+};
+
+const isValidEmail = (email) => {
+	const regEx = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+	if (email.match(regEx)) return true;
+	else return false;
+};
+
 // signup routes
 app.post('/signup', (req, res) => {
 	const newUser = {
@@ -76,6 +89,21 @@ app.post('/signup', (req, res) => {
 	};
 
 	// TODO: validate
+
+	let errors = {};
+
+	if (isEmpty(newUser.email)) {
+		errors.email = 'Must not be empty';
+	} else if (!isValidEmail(newUser.email)) {
+		errors.email = 'Must be valid email';
+	}
+
+	if (isEmpty(newUser.password)) errors.password = 'Must not be empty';
+	if (newUser.password !== newUser.confirmPassword) errors.password = 'Must match';
+	if (isEmpty(newUser.handle)) errors.handle = 'Must not be empty';
+
+	if (Object.keys(errors).length > 0) return res.status(400).json(errors);
+
 	db
 		.doc(`/users/${newUser.handle}`)
 		.get()
