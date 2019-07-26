@@ -1,4 +1,4 @@
-const { db } = require('../util/admin');
+const { admin, db } = require('../util/admin');
 const config = require('../util/config');
 
 const firebase = require('firebase');
@@ -16,7 +16,6 @@ exports.signup = (req, res) => {
 	};
 
 	// Validation
-
 	const { errors, valid } = validateSignupData(newUser);
 	if (!valid) return res.status(400).json(errors);
 
@@ -138,7 +137,7 @@ exports.uploadImage = (req, res) => {
 				return res.json({ message: 'image uploaded successfully' });
 			})
 			.catch((err) => {
-				console.error(err);
+				console.error('erros', err);
 				return res.status(500).json({ error: 'something went wrong' });
 			});
 	});
